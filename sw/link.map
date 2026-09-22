@@ -33,18 +33,18 @@ LOAD obj/start.o
 LOAD obj/hal.o
 LOAD obj/syscalls.o
 LOAD obj/main.o
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i_zicsr_zifencei/ilp32/libgcc.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i_zicsr_zifencei/ilp32/libc_nano.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i_zicsr_zifencei/ilp32/libgcc.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i/ilp32/libgcc.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i/ilp32/libgcc.a
 START GROUP
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i_zicsr_zifencei/ilp32/libgcc.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i_zicsr_zifencei/ilp32/libc_nano.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i_zicsr_zifencei/ilp32/libnosys.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i/ilp32/libgcc.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
 END GROUP
 START GROUP
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i_zicsr_zifencei/ilp32/libgcc.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i_zicsr_zifencei/ilp32/libc_nano.a
-LOAD /home/akyriazis/tools/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i_zicsr_zifencei/ilp32/libnosys.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/rv32i/ilp32/libgcc.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /home/akyriazis/tools/riscv-gnu/lib/gcc/riscv64-unknown-elf/15.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
 END GROUP
                 0x80000000                        ROM_START_ADDRESS = 0x80000000
                 0x00004000                        ROM_SIZE = 0x4000
@@ -130,7 +130,8 @@ OUTPUT(main.elf elf32-littleriscv)
 .comment        0x00000000        0xf
  .comment       0x00000000        0xf obj/hal.o
                                  0x10 (size before relaxing)
- .comment       0x0000000f       0x10 obj/main.o
+ .comment       0x0000000f        0x0 obj/main.o
+                                 0x10 (size before relaxing)
 
 .note.GNU-stack
                 0x00000000        0x0

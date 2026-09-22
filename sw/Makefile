@@ -46,7 +46,7 @@ $(TARGET).elf: $(OBJS)
 
 # Rule to link the object files into the final executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS)  $(LDFLAGS) -o $(TARGET) $(OBJS)
 
 # Rule to compile C source files into object files
 $(OBJ_DIR)%.o: $(SRC_DIR)%.c
