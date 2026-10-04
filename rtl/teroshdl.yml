@@ -1,0 +1,89 @@
+name: PYGMY
+toplevel: system.v
+
+files:
+
+  - name: core.vh
+    file_type: verilogSource
+    is_include_file: true
+
+  - name: control_status_registers.vh
+    file_type: verilogSource
+    is_include_file: true
+
+  - name: axilt.vh
+    file_type: verilogSource
+    is_include_file: true
+
+  - name: system.v
+    file_type: verilogSource
+
+  - name: core.v
+    file_type: verilogSource
+
+  - name: decode.v
+    file_type: verilogSource
+
+  - name: execute.v
+    file_type: verilogSource
+
+  - name: alu.v
+    file_type: verilogSource
+
+  - name: lsu.v
+    file_type: verilogSource
+
+  - name: csr.sv
+    file_type: systemVerilogSource
+
+  - name: timer.v
+    file_type: verilogSource
+
+  - name: regfile.sv
+    file_type: systemVerilogSource
+
+  - name: uart.sv
+    file_type: systemVerilogSource
+
+  - name: pram.sv
+    file_type: systemVerilogSource
+
+  - name: urom.sv
+    file_type: systemVerilogSource
+
+  - name: sync_fifo.v
+    file_type: verilogSource
+
+  - name: gpio.v
+    file_type: verilogSource
+
+  - name: axilt_master.sv
+    file_type: systemVerilogSource
+
+  - name: axilt_sram_slave.sv
+    file_type: systemVerilogSource
+
+  - name: axilt_urom_slave.sv
+    file_type: systemVerilogSource
+
+  - name: axilt_interconnect.sv
+    file_type: systemVerilogSource
+
+  - name: axilt_interconnect_wrapper.sv
+    file_type: systemVerilogSource
+
+
+configuration:
+  linter:
+    general:
+      linter_vhdl: none
+      linter_verilog: icarus
+    vhdlls:
+      standard: v2008
+  tools:
+    general:
+      select_tool: icarus
+    icarus:
+      installation_path: /usr/bin
+      analyze_options: ["-g2012"]
+      run_options: []

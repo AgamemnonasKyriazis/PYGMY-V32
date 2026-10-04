@@ -14,16 +14,27 @@ module core #(
     input   wire        i_MEI_4,
     input   wire        i_MEI_5,
 
-    output  wire [31:0] o_WB_ADDR,
-    output  wire [31:0] o_WB_DATA,
-    input   wire [31:0] i_WB_DATA,
-    output  wire        o_WB_WE,
-    output  wire [3:0]  o_WB_SEL,
-    output  wire        o_WB_STB,
-    input   wire        i_WB_ACK,
-    output  wire        o_WB_CYC,
-    output  wire        o_WB_TAGN,
-    input   wire        i_WB_TAGN
+    output  wire [31:0] o_AWADDR,
+    output  wire        o_AWVALID,
+    input   wire        i_AWREADY,
+
+    output  wire [31:0] o_WDATA,
+    output  wire [3:0]  o_WSTRB,
+    output  wire        o_WVALID,
+    input   wire        i_WREADY,
+
+    input   wire [1:0]  i_BRESP,
+    output  wire        o_BREADY,
+    input   wire        i_BVALID,
+
+    output  wire [31:0] o_ARADDR,
+    output  wire        o_ARVALID,
+    input   wire        i_ARREADY,
+
+    input   wire [31:0] i_RDATA,
+    input   wire [1:0]  i_RRESP,
+    input   wire        i_RVALID,
+    output  wire        o_RREADY
 );
 
 `include "core.vh"
@@ -185,26 +196,37 @@ execute #(.HART_ID(HART_ID)) executeUnit (
     .o_CSR_MEPC(csr_mepc)
 );
 
-/*----------------------------- WISHBONE MASTER INTERFACE ---------------------------------*/
+/*----------------------------- AXI-LITE MASTER INTERFACE ----------------------------------*/
 
-wishbone_master #(
+axilt_master #(
     .DATA_WIDTH(32),
     .ADDR_WIDTH(32)
-) wbi_master (
+) axilt_m (
     .i_RST(~i_RSTn),
     .i_CLK(i_CLK),
-    
-    .o_ADDR(o_WB_ADDR),
-    .o_DATA(o_WB_DATA),
-    .i_DATA(i_WB_DATA),
-    .o_WE(o_WB_WE),
-    .o_SEL(o_WB_SEL),
-    .o_STB(o_WB_STB),
-    .i_ACK(i_WB_ACK),
-    .o_CYC(o_WB_CYC),
-    .o_TAGN(o_WB_TAGN),
-    .i_TAGN(i_WB_TAGN),
-    
+
+    .o_AWADDR(o_AWADDR),
+    .o_AWVALID(o_AWVALID),
+    .i_AWREADY(i_AWREADY),
+
+    .o_WDATA(o_WDATA),
+    .o_WSTRB(o_WSTRB),
+    .o_WVALID(o_WVALID),
+    .i_WREADY(i_WREADY),
+
+    .i_BRESP(i_BRESP),
+    .o_BREADY(o_BREADY),
+    .i_BVALID(i_BVALID),
+
+    .o_ARADDR(o_ARADDR),
+    .o_ARVALID(o_ARVALID),
+    .i_ARREADY(i_ARREADY),
+
+    .i_RDATA(i_RDATA),
+    .i_RRESP(i_RRESP),
+    .i_RVALID(i_RVALID),
+    .o_RREADY(o_RREADY),
+
     .i_LSU_REQ(lsu_req),
     .i_LSU_ADDR(lsu_addr),
     .i_LSU_DATA(lsu_wdata),

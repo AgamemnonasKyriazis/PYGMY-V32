@@ -49,7 +49,7 @@ module decode #(
 
 wire stall = ~i_EN;
 
-reg [31:0] instruction;
+wire [31:0] instruction;
 wire [6:0]  opcode  = instruction[6:0];
 
 wire isAluReg       = (opcode == ALU_R);
@@ -67,6 +67,8 @@ wire isSystem       = (opcode == SYSTEM);
 wire isNoop         = (instruction == NOOP);
 wire isWfi          = (instruction == WFI);
 wire isMret         = (instruction == MRET);
+
+wire mask_instruction_noop;
 
 wire [2:0] funct3   = instruction[14:12];
 wire [6:0] funct7   = instruction[31:25];
@@ -132,6 +134,11 @@ reg  [7:0]  coreStateNext;
 reg  [31:0] pc;
 reg  [31:0] pc_next;
 
+assign mask_instruction_noop = (
+            (i_IRQ == 1'b1 && coreState == CORE_STATE_EXEC && coreStateNext == CORE_STATE_TRAP)
+        ||  (coreState == CORE_STATE_HALT)
+    );
+
 always @(*) begin
     coreStateNext = coreState;
     case (coreState)
@@ -166,16 +173,7 @@ always @(posedge i_CLK) begin
 end
 assign o_CORE_STATE = coreState;
 
-
-always @(*) begin
-    instruction = i_INSTRUCTION;
-    if (i_IRQ == 1'b1 && coreState == CORE_STATE_EXEC && coreStateNext == CORE_STATE_TRAP) begin
-        instruction = NOOP;
-    end
-    else if (coreState == CORE_STATE_HALT) begin
-        instruction = NOOP;
-    end
-end
+assign instruction = i_INSTRUCTION;
 
 /* PROGRAM COUNTER CONTROL */
 reg  [31:0] pc_op1;
@@ -243,49 +241,88 @@ always @(posedge i_CLK) begin
         o_AUIPC   <= 1'b0;
     end
     else if (i_EN) begin
-        o_ALU_OP  <= {1'b0, isAluReg | isAluImm};
-        o_REG_WE  <= isAluReg | isAluImm | isLoad | isJal | isJalr | isLui | isAuipc | isEcall;
-        o_MEM_WE  <= isStore;
-        o_MEM_RE  <= isLoad;
-        o_ECALL   <= isEcall;
-        o_IMM     <= isAluImm | isLoad | isStore | isJal | isJalr | isLui | isAuipc | isEcall;
-        o_JAL     <= isJal | isJalr;
-        o_LUI     <= isLui;
-        o_AUIPC   <= isAuipc;
+        if (mask_instruction_noop == 1'b1) begin
+            o_ALU_OP  <= {1'b0, 1'b1};
+            o_REG_WE  <= 1'b0;
+            o_MEM_WE  <= 1'b0;
+            o_MEM_RE  <= 1'b0;
+            o_ECALL   <= 1'b0;
+            o_IMM     <= 1'b0;
+            o_JAL     <= 1'b0;
+            o_LUI     <= 1'b0;
+            o_AUIPC   <= 1'b0;
+        end
+        else begin
+            o_ALU_OP  <= {1'b0, isAluReg | isAluImm};
+            o_REG_WE  <= isAluReg | isAluImm | isLoad | isJal | isJalr | isLui | isAuipc | isEcall;
+            o_MEM_WE  <= isStore;
+            o_MEM_RE  <= isLoad;
+            o_ECALL   <= isEcall;
+            o_IMM     <= isAluImm | isLoad | isStore | isJal | isJalr | isLui | isAuipc | isEcall;
+            o_JAL     <= isJal | isJalr;
+            o_LUI     <= isLui;
+            o_AUIPC   <= isAuipc;
+        end
     end
 end
 
 always @(posedge i_CLK) begin
     if (i_EN) begin
-        o_FUNCT3 <= funct3;
-        o_FUNCT7 <= funct7;
+        if (mask_instruction_noop == 1'b1) begin
+            o_FUNCT3 <= 3'b0;
+            o_FUNCT7 <= 7'b0;    
+        end
+        else begin
+            o_FUNCT3 <= funct3;
+            o_FUNCT7 <= funct7;    
+        end
     end
 end
 
 always @(posedge i_CLK) begin : OutRegs
     if (i_EN) begin
         o_PC_PIPELINE <= pc;
+        if (mask_instruction_noop == 1'b1) begin
+            o_RS1         <= 32'b0;
+            o_RS2         <= 32'b0;
+            o_RD_PTR      <= 5'b0;
+        end
+        else begin
+            o_RS1         <= rs1;
+            o_RS2         <= rs2;
+            o_RD_PTR      <= rd_ptr;
+        end
+    end
+end
+
+always @(posedge i_CLK) begin : OutInstruction
+    if (i_EN) begin
         o_INSTRUCTION <= instruction;
-        o_RS1         <= rs1;
-        o_RS2         <= rs2;
-        o_RD_PTR      <= rd_ptr;
+        if (mask_instruction_noop == 1'b1) begin
+            o_INSTRUCTION <= NOOP;
+        end
     end
 end
 
 always @(posedge i_CLK) begin
     if (i_EN) begin
-        case (1'b1)
-        isLui, isAuipc : 
-            o_IMM_VAL <= IMM_U;
-        isStore : 
-            o_IMM_VAL <= IMM_S;
-        isJal, isJalr :
-            o_IMM_VAL <= 32'd4;
-        isEcall :
-            o_IMM_VAL <= IMM_CSR;
-        default : 
-            o_IMM_VAL <= ( (funct3 == 3'h5) || (funct3 == 3'h1) )? IMM_SFT : IMM_R;
-        endcase
+        if (mask_instruction_noop == 1'b1) begin
+            o_IMM_VAL <= 32'b0;
+        end
+        else begin
+            case (1'b1)
+            isLui, isAuipc : 
+                o_IMM_VAL <= IMM_U;
+            isStore : 
+                o_IMM_VAL <= IMM_S;
+            isJal, isJalr :
+                o_IMM_VAL <= 32'd4;
+            isEcall :
+                o_IMM_VAL <= IMM_CSR;
+            default : 
+                o_IMM_VAL <= ( (funct3 == 3'h5) || (funct3 == 3'h1) )? IMM_SFT : IMM_R;
+            endcase
+        end
     end
 end
 

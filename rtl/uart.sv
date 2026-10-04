@@ -7,22 +7,34 @@ module uart #(
     input  i_RST,
     input  i_CLK,
 
-    input  [ADDR_WIDTH-1:0] i_ADDR,
-    input  [DATA_WIDTH-1:0] i_DATA,
-    output logic [DATA_WIDTH-1:0] o_DATA,
-    input  i_WE,
-    
-    input  [3:0] i_SEL,
-    input  i_STB,
-    output logic o_ACK,
-    input  i_CYC,
-    input  i_TAGN,
-    output o_TAGN,
+    input  [ADDR_WIDTH-1:0] i_AWADDR,
+    input  i_AWVALID,
+    output logic o_AWREADY,
+
+    input  [DATA_WIDTH-1:0] i_WDATA,
+    input  [3:0] i_WSTRB,
+    input  i_WVALID,
+    output logic o_WREADY,
+
+    output logic [1:0] o_BRESP,
+    output logic o_BVALID,
+    input  i_BREADY,
+
+    input  [ADDR_WIDTH-1:0] i_ARADDR,
+    input  i_ARVALID,
+    output logic o_ARREADY,
+
+    output logic [DATA_WIDTH-1:0] o_RDATA,
+    output logic [1:0] o_RRESP,
+    output logic o_RVALID,
+    input  i_RREADY,
 
     input  i_RX,
     output o_TX,
     output [1:0] o_IRQ
 );
+
+`include "axilt.vh"
 
 localparam RX_FRAME_LEN = 'd9;
 localparam TX_FRAME_LEN = 'd10;
@@ -221,7 +233,7 @@ always_ff @(posedge i_CLK) begin
         tx_start = ~tx_fifo_empty;
 end
 
-assign tx_fifo_data_i = i_DATA[7:0];
+assign tx_fifo_data_i = i_WDATA[7:0];
 
 assign rx_start = rx_sft_reg[2] & ~rx_sft_reg[1] & ~rx_sft_reg[0] & (rx_state == RX_IDLE);
 
@@ -233,35 +245,79 @@ assign rx = rx_sft_reg[0];
 
 assign o_IRQ = {tx_fifo_full, ~rx_fifo_empty};
 
-logic valid_cycle;
-logic valid_req;
+typedef enum {
+    IDLE,
+    WDATA,
+    WRESP,
+    RDATA
+} state_t;
 
-always_comb begin
-    valid_cycle = i_CYC;
-    valid_req = valid_cycle & i_STB & (~o_ACK);
+state_t state;
+
+always_ff @(posedge i_CLK) begin
+    if (i_RST) begin
+        state <= IDLE;
+    end
+    else begin
+        case (state)
+        IDLE : begin
+            if (i_AWVALID == 1'b1) begin
+                state <= WDATA;
+            end
+            else if (i_ARVALID == 1'b1) begin
+                state <= RDATA;
+            end
+        end
+        WDATA : begin
+            if (i_WVALID == 1'b1) begin
+                state <= WRESP;
+            end
+        end
+        WRESP : begin
+            if (i_BREADY == 1'b1) begin
+                state <= IDLE;
+            end
+        end
+        RDATA : begin
+            if (i_RREADY == 1'b1) begin
+                state <= IDLE;
+            end
+        end
+        endcase
+    end
 end
 
+assign o_AWREADY = (state == IDLE);
+assign o_ARREADY = (state == IDLE) & ~i_AWVALID;
+assign o_WREADY  = (state == WDATA);
+
+assign o_BVALID = (state == WRESP);
+assign o_BRESP  = AXI_OKAY;
+
+assign o_RVALID = (state == RDATA);
+assign o_RRESP  = AXI_OKAY;
+
 always_comb begin
-    rx_fifo_re = valid_req & (~i_WE) & (i_ADDR[3:2] == 2'b00);
+    rx_fifo_re = (state == IDLE) & i_ARVALID & ~i_AWVALID & (i_ARADDR[3:2] == 2'b00);
     rx_fifo_we = (rx_state == RX_DONE) & rx_clk;
 
     tx_fifo_re = (tx_state == TX_IDLE) & tx_clk;
-    tx_fifo_we = valid_req & i_WE; 
+    tx_fifo_we = (state == WDATA) & i_WVALID;
 end
 
 always_ff @(posedge i_CLK) begin
-    o_ACK <= 1'b0;
-    o_DATA <= 0;
-    if (valid_req) begin
-        case (i_ADDR[3:2])
-        2'b00 : o_DATA <= {24'b0, rx_fifo_data_o};
-        2'b01 : o_DATA <= {31'b0, ~rx_fifo_empty};
-        2'b10 : o_DATA <= {31'b0, ~rx_fifo_empty};
-        2'b11 : o_DATA <= {31'b0, ~rx_fifo_empty};
-        endcase
-        o_ACK <= valid_req;
+    if (i_RST) begin
+        o_RDATA <= 0;
     end
-end 
+    else if (state == IDLE && i_ARVALID == 1'b1 && i_AWVALID == 1'b0) begin
+        case (i_ARADDR[3:2])
+        2'b00 : o_RDATA <= {24'b0, rx_fifo_data_o};
+        2'b01 : o_RDATA <= {31'b0, ~rx_fifo_empty};
+        2'b10 : o_RDATA <= {31'b0, ~rx_fifo_empty};
+        2'b11 : o_RDATA <= {31'b0, ~rx_fifo_empty};
+        endcase
+    end
+end
 
 always @(posedge tx_clk) begin
     if (tx_fifo_empty == 1'b0 && tx_state == TX_IDLE)

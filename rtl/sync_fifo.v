@@ -16,7 +16,7 @@ module sync_fifo #(
 
 localparam ADDR_BITS = $clog2(DEPTH);   // address width for buffer
 
-reg [ADDR_BITS:0] w_ptr, r_ptr;
+reg  [ADDR_BITS:0] w_ptr, r_ptr;
 wire [ADDR_BITS:0] w_ptr_incr, r_ptr_incr;
 wire [ADDR_BITS:0] w_ptr_next, r_ptr_next;
 
